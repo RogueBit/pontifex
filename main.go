@@ -1,5 +1,75 @@
 package main
 
+/* GoLang implementation of Bruce Schneier's Solitaire Encryption
+   Algorithm (http://www.counterpane.com/solitaire.html).
+
+   Based on original code by danmux https://github.com/danmux/pontifex
+
+   -- r0gu3b17 (r0gu3b17@gmail.com)
+   -----BEGIN PGP PUBLIC KEY BLOCK-----
+
+   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
+   =dRQa
+   -----END PGP PUBLIC KEY BLOCK-----*/
+
 import (
 	"bufio"
 	"bytes"
@@ -12,8 +82,8 @@ import (
 )
 
 const (
-	ja     = byte(53)
-	jb     = byte(54)
+	ja     = byte(53) //Numerical position in deck of Joker A
+	jb     = byte(54) //Numerical position in deck of Joker B
 	maxKey = 26
 )
 

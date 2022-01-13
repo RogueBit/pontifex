@@ -3,7 +3,10 @@ package main
 /* GoLang implementation of Bruce Schneier's Solitaire Encryption
    Algorithm (http://www.counterpane.com/solitaire.html).
 
-   Based on original code by danmux https://github.com/danmux/pontifex
+   Forked from https://github.com/danmux/pontifex
+
+   Found a great write up at https://aarontoponce.org/wiki/crypto/card-ciphers/solitaire
+   to help with understanding, he did a youtube as well that makes it easy to digest.
 
    -- r0gu3b17 (r0gu3b17@gmail.com)
    -----BEGIN PGP PUBLIC KEY BLOCK-----
@@ -84,7 +87,7 @@ import (
 const (
 	ja     = byte(53) //Numerical position in deck of Joker A
 	jb     = byte(54) //Numerical position in deck of Joker B
-	maxKey = 26 //Letters in the english alphabet
+	maxKey = 26       //Letters in the english alphabet
 )
 
 var verbose = false //Verbose off by default

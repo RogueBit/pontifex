@@ -84,10 +84,10 @@ import (
 const (
 	ja     = byte(53) //Numerical position in deck of Joker A
 	jb     = byte(54) //Numerical position in deck of Joker B
-	maxKey = 26
+	maxKey = 26 //Letters in the english alphabet
 )
 
-var verbose = false
+var verbose = false //Verbose off by default
 
 func main() {
 

@@ -94,29 +94,54 @@ var verbose = false //Verbose off by default
 
 func main() {
 
-	var keyName, inName, outName string
+	/*var keyName, inName, outName string
 	flag.StringVar(&keyName, "k", "shared.key", "the shared key to use")
 	flag.StringVar(&inName, "i", "in.txt", "the input")
 	flag.StringVar(&outName, "o", "out.txt", "the output")
-	op := flag.String("op", "enc", "[enc, dec, key, dkey] key - takes a dec of cards input and makes a key, dkey, makes a key from a default deck")
+	opPtr := flag.String("op", "enc", "[enc, dec, key, dkey] key - takes a dec of cards input and makes a key, dkey, makes a key from a default deck")
 	flag.BoolVar(&verbose, "v", false, "verbose prints the deck at each stage")
+	*/
 
-	orgHelp := flag.Usage
-	flag.Usage = func() {
-		orgHelp()
-		setupMaps(true)
+	keyCmd := flag.NewFlagSet("key", flag.ExitOnError)
+	keyKey := keyCmd.String("key", "my.key", "Name of key file to be generated")
+	keyDeck := keyCmd.String("deck", "my.deck", "Name of file containing deck")
+
+	dkeyCmd := flag.NewFlagSet("dkey", flag.ExitOnError)
+	dkeyKey := dkeyCmd.String("key", "my.key", "Name of key file to be generated")
+
+	var Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+		flag.PrintDefaults()
 	}
 
-	flag.Parse()
+	if len(os.Args) < 2 {
+		Usage()
+		os.Exit(1)
+	}
 
-	setupMaps(false)
+	switch os.Args[1] {
+	case "key":
+		keyCmd.Parse(os.Args[2:])
+		fmt.Println("Subcommand 'key'")
+		fmt.Println("   key:", *keyKey)
+		fmt.Println("   deck:", *keyDeck)
+	case "dkey":
+		dkeyCmd.Parse(os.Args[2:])
+		fmt.Println("Subcommand 'dkey'")
+		fmt.Println("   dkey:", *dkeyKey)
+	default:
+		fmt.Println("(key,dkey)")
+		os.Exit(1)
+	}
 
-	in, err := ioutil.ReadFile(inName)
+	/*setupMaps(false)
+
+	in, err := ioutil.ReadFile(inName) // Not sure if this makes sense yet. Why open it here?
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	switch *op {
+	switch *opPtr {
 	case "enc":
 		key := readKey(keyName)
 		in = cleanInput(in)
@@ -137,12 +162,12 @@ func main() {
 	case "dkey":
 		err = defaultKey(keyName)
 	default:
-		log.Fatal(*op, "unsupported")
+		log.Fatal(*opPtr, "unsupported")
 	}
 
 	if err != nil {
 		log.Fatal(err)
-	}
+	}*/
 }
 
 func decrypt(k key, in []byte) []byte {

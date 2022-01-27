@@ -92,6 +92,12 @@ const (
 
 var verbose = false //Verbose off by default
 
+// some maps to go from and to card string to their representative value
+var (
+	cardToVal = map[string]byte{}
+	valToCard = map[byte]string{}
+)
+
 func main() {
 
 	/*var keyName, inName, outName string
@@ -109,10 +115,29 @@ func main() {
 	dkeyCmd := flag.NewFlagSet("dkey", flag.ExitOnError)
 	dkeyKey := dkeyCmd.String("key", "my.key", "Name of key file to be generated")
 
+	encCmd := flag.NewFlagSet("enc", flag.ExitOnError)
+	encKey := encCmd.String("key", "my.key", "Name of key file to use")
+	encIn := encCmd.String("in", "clear.txt", "Clear text input file to be encrypted")
+	encOut := encCmd.String("out", "encrypted.txt", "Encrypted output file")
+
+	//go run main.go -op dec -k shared.key -i enc.txt -o denc.txt
+	decCmd := flag.NewFlagSet("enc", flag.ExitOnError)
+	decKey := decCmd.String("key", "my.key", "Name of key file to use")
+	decIn := decCmd.String("in", "encrypted.txt", "Encrypted output file")
+	decOut := decCmd.String("out", "clear.txt", "Clear text decrypted output file")
+
 	var Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
-		flag.PrintDefaults()
+		fmt.Fprintf(os.Stderr, "\t%s <command> [arguments]\n\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "The commands are:\n")
+		fmt.Fprintf(os.Stderr, "\tkey\n")
+		fmt.Fprintf(os.Stderr, "\tdkey\n")
+		fmt.Fprintf(os.Stderr, "\tenc\n")
+		fmt.Fprintf(os.Stderr, "\tdec\n\n")
+		fmt.Fprintf(os.Stderr, "Use %s help <command> for more information about a command.\n\n", os.Args[0])
 	}
+
+	setupMaps(false)
 
 	if len(os.Args) < 2 {
 		Usage()
@@ -127,47 +152,84 @@ func main() {
 		fmt.Println("   deck:", *keyDeck)
 	case "dkey":
 		dkeyCmd.Parse(os.Args[2:])
-		fmt.Println("Subcommand 'dkey'")
-		fmt.Println("   dkey:", *dkeyKey)
+		fmt.Println("Generating:", *dkeyKey)
+		defaultKey(*dkeyKey)
+	case "enc":
+		encCmd.Parse(os.Args[2:])
+		fmt.Println("Subcommand 'enc'")
+		fmt.Println("   key:", *encKey)
+		fmt.Println("   in:", *encIn)
+		fmt.Println("   out:", *encOut)
+	case "dec":
+		encCmd.Parse(os.Args[2:])
+		fmt.Println("Subcommand 'dec'")
+		fmt.Println("   key:", *decKey)
+		fmt.Println("   in:", *decIn)
+		fmt.Println("   out:", *decOut)
+	case "help":
+		if len(os.Args) < 3 {
+			Usage()
+			os.Exit(1)
+		}
+		switch os.Args[2] {
+		case "key":
+			fmt.Fprintf(os.Stderr, "Usage: %s key [-deck deck] [-key key]\n\n", os.Args[0])
+			fmt.Fprintf(os.Stderr, "key builds a key file using the deck order specified in the deck file.\n\n")
+			keyCmd.PrintDefaults()
+		case "dkey":
+			fmt.Fprintf(os.Stderr, "Usage: %s dkey [-key key]\n\n", os.Args[0])
+			fmt.Fprintf(os.Stderr, "dkey builds a key file using the default (bridge) deck order.\n\n")
+			dkeyCmd.PrintDefaults()
+		case "enc":
+			fmt.Fprintf(os.Stderr, "Usage: %s enc [-key key] [-in in] [-out out]\n\n", os.Args[0])
+			fmt.Fprintf(os.Stderr, "enc encrypts the contents of the in file and writes to the out file.\n\n")
+			encCmd.PrintDefaults()
+		case "dec":
+			fmt.Fprintf(os.Stderr, "Usage: %s dec [-key key] [-in in] [-out out]\n\n", os.Args[0])
+			fmt.Fprintf(os.Stderr, "dec decrypts the contents of the in file and writes to the out file.\n\n")
+			decCmd.PrintDefaults()
+		default:
+			Usage()
+			os.Exit(1)
+		}
 	default:
-		fmt.Println("(key,dkey)")
+		Usage()
 		os.Exit(1)
 	}
 
-	/*setupMaps(false)
-
-	in, err := ioutil.ReadFile(inName) // Not sure if this makes sense yet. Why open it here?
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	switch *opPtr {
-	case "enc":
-		key := readKey(keyName)
-		in = cleanInput(in)
-		o := encrypt(key, in)
-		err = writeChars(o, outName, true)
-	case "dec":
-		key := readKey(keyName)
-		in = cleanInput(in)
-		o := decrypt(key, in)
-		err = writeChars(o, outName, false)
-	case "key":
-		cards, err := ioutil.ReadFile(inName)
+	/*
+		in, err := ioutil.ReadFile(inName) // Not sure if this makes sense yet. Why open it here?
 		if err != nil {
-			break
+			log.Fatal(err)
 		}
-		key := cardsToKey(cards)
-		err = writeKey(key, keyName)
-	case "dkey":
-		err = defaultKey(keyName)
-	default:
-		log.Fatal(*opPtr, "unsupported")
-	}
 
-	if err != nil {
-		log.Fatal(err)
-	}*/
+		switch *opPtr {
+		case "enc":
+			key := readKey(keyName)
+			in = cleanInput(in)
+			o := encrypt(key, in)
+			err = writeChars(o, outName, true)
+		case "dec":
+			key := readKey(keyName)
+			in = cleanInput(in)
+			o := decrypt(key, in)
+			err = writeChars(o, outName, false)
+		case "key":
+			cards, err := ioutil.ReadFile(inName)
+			if err != nil {
+				break
+			}
+			key := cardsToKey(cards)
+			err = writeKey(key, keyName)
+		case "dkey":
+			err = defaultKey(keyName)
+		default:
+			log.Fatal(*opPtr, "unsupported")
+		}
+
+		if err != nil {
+			log.Fatal(err)
+		}*/
 }
 
 func decrypt(k key, in []byte) []byte {
@@ -213,12 +275,7 @@ func encrypt(k key, in []byte) []byte {
 
 // defaultKey just generates a default key and writes it in base64
 func defaultKey(fName string) error {
-	k := cardsToKey([]byte(`
-		1C 2C 3C 4C 5C 6C 7C 8C 9C 10C JC QC KC
-		1D 2D 3D 4D 5D 6D 7D 8D 9D 10D JD QD KD 
-		1H 2H 3H 4H 5H 6H 7H 8H 9H 10H JH QH KH 
-		1S 2S 3S 4S 5S 6S 7S 8S 9S 10S JS QS KS
-		*A *B`))
+	k := cardsToKey([]byte("1C 2C 3C 4C 5C 6C 7C 8C 9C 10C JC QC KC 1D 2D 3D 4D 5D 6D 7D 8D 9D 10D JD QD KD 1H 2H 3H 4H 5H 6H 7H 8H 9H 10H JH QH KH 1S 2S 3S 4S 5S 6S 7S 8S 9S 10S JS QS KS *A *B"))
 	return writeKey(k, fName)
 }
 
@@ -485,10 +542,10 @@ func (k key) log() {
 }
 
 // some maps to go from and to card string to their representative value
-var (
-	cardToVal = map[string]byte{}
-	valToCard = map[byte]string{}
-)
+//var (
+//cardToVal = map[string]byte{}
+//valToCard = map[byte]string{}
+//)
 
 // setupMaps sets up the maps from card strings to values and visa versa
 func setupMaps(show bool) {

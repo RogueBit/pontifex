@@ -82,6 +82,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"regexp"
+	"strings"
 )
 
 const (
@@ -120,8 +122,7 @@ func main() {
 	encIn := encCmd.String("in", "clear.txt", "Clear text input file to be encrypted")
 	encOut := encCmd.String("out", "encrypted.txt", "Encrypted output file")
 
-	//go run main.go -op dec -k shared.key -i enc.txt -o denc.txt
-	decCmd := flag.NewFlagSet("enc", flag.ExitOnError)
+	decCmd := flag.NewFlagSet("dec", flag.ExitOnError)
 	decKey := decCmd.String("key", "my.key", "Name of key file to use")
 	decIn := decCmd.String("in", "encrypted.txt", "Encrypted output file")
 	decOut := decCmd.String("out", "clear.txt", "Clear text decrypted output file")
@@ -147,25 +148,39 @@ func main() {
 	switch os.Args[1] {
 	case "key":
 		keyCmd.Parse(os.Args[2:])
-		fmt.Println("Subcommand 'key'")
-		fmt.Println("   key:", *keyKey)
-		fmt.Println("   deck:", *keyDeck)
+		fmt.Println("Generating:", *keyKey)
+		cards, err := ioutil.ReadFile(*keyDeck)
+		if err != nil {
+			break
+		}
+		key := cardsToKey(cards)
+		err = writeKey(key, *keyKey)
 	case "dkey":
 		dkeyCmd.Parse(os.Args[2:])
 		fmt.Println("Generating:", *dkeyKey)
 		defaultKey(*dkeyKey)
 	case "enc":
 		encCmd.Parse(os.Args[2:])
-		fmt.Println("Subcommand 'enc'")
-		fmt.Println("   key:", *encKey)
-		fmt.Println("   in:", *encIn)
-		fmt.Println("   out:", *encOut)
+		fileIn, err := ioutil.ReadFile(*encIn)
+		if err != nil {
+			log.Fatal(err)
+		}
+		key := readKey(*encKey)
+		in := cleanInput(fileIn)
+		o := encrypt(key, in)
+		fmt.Println("Generating:", *encOut)
+		writeChars(o, *encOut, true)
 	case "dec":
-		encCmd.Parse(os.Args[2:])
-		fmt.Println("Subcommand 'dec'")
-		fmt.Println("   key:", *decKey)
-		fmt.Println("   in:", *decIn)
-		fmt.Println("   out:", *decOut)
+		decCmd.Parse(os.Args[2:])
+		fmt.Println("Generating:", *decOut)
+		fileIn, err := ioutil.ReadFile(*decIn)
+		if err != nil {
+			log.Fatal(err)
+		}
+		key := readKey(*decKey)
+		in := cleanInput(fileIn)
+		o := decrypt(key, in)
+		writeChars(o, *decOut, false)
 	case "help":
 		if len(os.Args) < 3 {
 			Usage()
@@ -340,6 +355,14 @@ func writeChars(d []byte, fName string, block bool) error {
 // maps upper case chars to values where 'A' = 1
 func cleanInput(in []byte) []byte {
 	in = bytes.Join(bytes.Fields(in), nil)
+	inString := string(in)
+	reg, err := regexp.Compile("[^a-zA-Z]+")
+	if err != nil {
+		log.Fatal(err)
+	}
+	processedString := reg.ReplaceAllString(inString, "")
+	upString := strings.ToUpper(processedString)
+	in = []byte(upString)
 	for i, v := range in {
 		in[i] = v - 'A' + 1
 	}
